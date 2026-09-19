@@ -517,8 +517,6 @@ class Scheduler(
         # Init ZBAL, switch allocator should before any torch alloc action
         self.init_zbal_on_npu()
 
-        # The groups are the first thing that allocates, so this comes after the
-        # allocator switch above and before anything that reads a group.
         bootstrap.init_parallel_runtime(
             server_args=server_args,
             model_config=self.model_config,
@@ -6025,10 +6023,6 @@ def run_scheduler_process(
     # Load plugins so hooks can override Scheduler and its dependencies.
     load_plugins()
     dp_rank = resolve_spawn_dp_rank(dp_rank)
-    # Publish before anything in this process reads configuration, with the
-    # placement the launcher decided: from here on a rank read is answered
-    # without a process group, which is what every reader needs before
-    # `init_torch_distributed` has run.
     publish(
         server_args,
         role="scheduler",
